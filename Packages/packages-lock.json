@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.rothiotome.very-simple-twitch-chat": {
+      "version": "https://github.com/rothiotome/very-simple-twitch-chat.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "fd8bddfdb630d347faeab1a53a55edea20b6026a"
+    },
     "com.unity.2d.animation": {
       "version": "7.0.10",
       "depth": 1,
