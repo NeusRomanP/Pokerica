@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine.Networking;
 using TwitchChat;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PokemonController : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class PokemonController : MonoBehaviour
     private HttpClient client = new HttpClient();
     private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
     int pokemonNumber = 1;
+    public Image img;
 
     [SerializeField]
     Pokemon currentPokemon;
@@ -46,22 +48,13 @@ public class PokemonController : MonoBehaviour
     public void PrintPokemon(){
         Debug.Log(apiPath+pokemonNumber);
         StartCoroutine(FetchPokemonFromApi(pokemonNumber));
-        pokemonNumber++;
     }
 
     IEnumerator FetchPokemonFromApi(int number)
     {
-        /*string prova = "";
-        HttpResponseMessage response = await client.GetAsync(apiPath+number);
-
-        if (response.IsSuccessStatusCode)
-        {
-            prova = await response.Content.ReadAsStringAsync();
-        }
-
-        return "Hola";*/
 
         UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+number);
+        pokemonNumber++;
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -69,40 +62,59 @@ public class PokemonController : MonoBehaviour
             Debug.LogError(pokemonInfo.error);
             yield break;
         }
-        yield return new WaitForSeconds(1);
+        //yield return new WaitForSeconds(1);
 
         Debug.Log(pokemonInfo.downloadHandler.text);
 
-        //yield return pokemonInfo.downloadHandler.text;
-
         currentPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        yield return new WaitForSeconds(1);
+        //yield return new WaitForSeconds(1);
 
         Debug.Log(currentPokemon.name);
         Debug.Log(currentPokemon.sprites.front_default);
 
+        StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
+
         yield return new WaitForSeconds(0);
 
+    }
+
+    IEnumerator FetchImageFromURL(string url)
+    {
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
+
+        yield return request.SendWebRequest();
+
+        if(request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(request.error);
+            yield break;
+        }
+
+        Texture2D downloadedTexture = DownloadHandlerTexture.GetContent(request) as Texture2D;
+
+        GetComponent<Image>().sprite = Sprite.Create(downloadedTexture, new Rect(0, 0, downloadedTexture.width, downloadedTexture.height), new Vector2(25, -25));
+
+
+        yield return null;
     }
 }
 
 [System.Serializable]
 class Pokemon{
     public string name;
-    public Sprite sprites;
+    public Sprites sprites;
 
-    public Pokemon(string name, Sprite sprites){
+    public Pokemon(string name, Sprites sprites){
         this.name = name;
         this.sprites = sprites;
     }
 }
 
 [System.Serializable]
-class Sprite{
+class Sprites{
     public string front_default;
 
-    public Sprite(string front_default){
+    public Sprites(string front_default){
         this.front_default = front_default;
     }
 }
