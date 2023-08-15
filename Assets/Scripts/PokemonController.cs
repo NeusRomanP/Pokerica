@@ -15,11 +15,16 @@ public class PokemonController : MonoBehaviour
 {
 
     public TextMeshProUGUI lastPokemonNameTMP;
+    public TextMeshProUGUI highScoreTMP;
+    public TextMeshProUGUI shameOnTMP;
+    public TextMeshProUGUI highScoreByTMP;
 
     private HttpClient client = new HttpClient();
     private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
     int pokemonNumber = 1;
     public Image img;
+
+    private int highScore = 0;
 
     Texture2D downloadedTexture = null;
 
@@ -118,6 +123,13 @@ public class PokemonController : MonoBehaviour
             return true;
         }
 
+        if(pokemonNumber + 1 > highScore){
+            highScore = pokemonNumber -1;
+        }
+
+        ShowHighScore();
+        
+
         return false;
     }
 
@@ -159,6 +171,10 @@ public class PokemonController : MonoBehaviour
         string nameToDisplay = lastPokemonName.Replace("-", " ").ToUpper();
 
         lastPokemonNameTMP.text = nameToDisplay;
+    }
+
+    public void ShowHighScore(){
+        highScoreTMP.text = "High score: " + highScore;
     }
 }
 

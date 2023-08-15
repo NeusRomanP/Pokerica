@@ -1065,6 +1065,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lastPokemonNameTMP: {fileID: 8269444}
+  highScoreTMP: {fileID: 1928892554}
+  shameOnTMP: {fileID: 971607740}
+  highScoreByTMP: {fileID: 1530041707}
   img: {fileID: 0}
   currentPokemon:
     name: 
