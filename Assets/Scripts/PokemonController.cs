@@ -18,6 +18,8 @@ public class PokemonController : MonoBehaviour
     int pokemonNumber = 1;
     public Image img;
 
+    Texture2D downloadedTexture = null;
+
     [SerializeField]
     Pokemon currentPokemon;
 
@@ -25,6 +27,8 @@ public class PokemonController : MonoBehaviour
     void Start()
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
+
+        //ParseUserInput("PKMN: Bulbasaur");
     }
 
     // Update is called once per frame
@@ -62,18 +66,16 @@ public class PokemonController : MonoBehaviour
             Debug.LogError(pokemonInfo.error);
             yield break;
         }
-        //yield return new WaitForSeconds(1);
-
-        Debug.Log(pokemonInfo.downloadHandler.text);
 
         currentPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
-
-        //yield return new WaitForSeconds(1);
 
         Debug.Log(currentPokemon.name);
         Debug.Log(currentPokemon.sprites.front_default);
 
         StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
+
+        ParseUserInput("!pkmn:nidoran m");
+        Debug.Log(CompareInputWithCurrentPokemon("!pkmn:nidoran m"));
 
         yield return new WaitForSeconds(0);
 
@@ -81,6 +83,8 @@ public class PokemonController : MonoBehaviour
 
     IEnumerator FetchImageFromURL(string url)
     {
+
+        //TODO: Dispose of this request
         UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
 
         yield return request.SendWebRequest();
@@ -90,12 +94,58 @@ public class PokemonController : MonoBehaviour
             yield break;
         }
 
-        Texture2D downloadedTexture = DownloadHandlerTexture.GetContent(request) as Texture2D;
+        if(downloadedTexture != null){
+            Destroy(downloadedTexture);
+        }
 
-        GetComponent<Image>().sprite = Sprite.Create(downloadedTexture, new Rect(0, 0, downloadedTexture.width, downloadedTexture.height), new Vector2(25, -25));
+        downloadedTexture = DownloadHandlerTexture.GetContent(request) as Texture2D;
+
+        request.Dispose();
+
+        GetComponent<Image>().sprite = Sprite.Create(downloadedTexture, new Rect(0, 0, downloadedTexture.width, downloadedTexture.height), new Vector2(0, 0));
 
 
         yield return null;
+    }
+
+    public bool CompareInputWithCurrentPokemon(string input)
+    {
+        if(ParseUserInput(input) == ParseCurrentPokemonName()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public string ParseUserInput(string input)
+    {
+        input = input.ToLower();
+
+        if(input.StartsWith("!pkmn:"))
+        {
+            string name = input.Split("!pkmn:")[1];
+
+            string parsedInput = name.Replace("-", "").Replace(" ", "").Replace(".", "").Replace("'", "");
+
+            if((currentPokemon.name.EndsWith("-f") || currentPokemon.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
+                string sufix = currentPokemon.name[(currentPokemon.name.LastIndexOf("-")+1)..currentPokemon.name.Length];
+                if(!parsedInput.EndsWith(sufix)){
+                    parsedInput += sufix;
+                    Debug.Log("Parsed");
+                    Debug.Log(parsedInput);
+                }
+            }
+            return parsedInput;
+        }
+
+        return null;
+    }
+
+    public string ParseCurrentPokemonName()
+    {
+        string parsedCurrentPokemonName = currentPokemon.name.Replace("-", "").Replace(" ", "").Replace(".", "");
+
+        return parsedCurrentPokemonName.ToLower();
     }
 }
 
