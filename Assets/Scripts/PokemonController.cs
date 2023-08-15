@@ -6,12 +6,15 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
+using TMPro;
 using TwitchChat;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class PokemonController : MonoBehaviour
 {
+
+    public TextMeshProUGUI lastPokemonNameTMP;
 
     private HttpClient client = new HttpClient();
     private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
@@ -22,6 +25,7 @@ public class PokemonController : MonoBehaviour
 
     [SerializeField]
     Pokemon currentPokemon;
+    string lastPokemonName = "";
 
     // Start is called before the first frame update
     void Start()
@@ -34,7 +38,7 @@ public class PokemonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        ShowLastPokemonName();
     }
 
     void OnDestroy()
@@ -135,6 +139,9 @@ public class PokemonController : MonoBehaviour
                     Debug.Log(parsedInput);
                 }
             }
+
+            lastPokemonName = currentPokemon.name;
+
             return parsedInput;
         }
 
@@ -146,6 +153,12 @@ public class PokemonController : MonoBehaviour
         string parsedCurrentPokemonName = currentPokemon.name.Replace("-", "").Replace(" ", "").Replace(".", "");
 
         return parsedCurrentPokemonName.ToLower();
+    }
+
+    public void ShowLastPokemonName(){
+        string nameToDisplay = lastPokemonName.Replace("-", " ").ToUpper();
+
+        lastPokemonNameTMP.text = nameToDisplay;
     }
 }
 
