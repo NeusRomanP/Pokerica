@@ -19,12 +19,16 @@ public class PokemonController : MonoBehaviour
     public TextMeshProUGUI shameOnTMP;
     public TextMeshProUGUI highScoreByTMP;
 
+    public Sprite empty;
+
     private HttpClient client = new HttpClient();
     private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
     int pokemonNumber = 1;
     public Image img;
 
     private int highScore = 0;
+    private string highScoreBy = "";
+    private string shameOn = "";
 
     Texture2D downloadedTexture = null;
 
@@ -43,7 +47,29 @@ public class PokemonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        ShowLastPokemonName();
+        
+
+        ParseUserInput("!pkmn:bulbasaur");
+        bool isCorrectInput = CompareInputWithCurrentPokemon("!pkmn:bulbasaur");
+
+        
+        if(isCorrectInput){
+            Debug.Log(pokemonNumber);
+            ShowLastUsername("neusr");
+            ShowLastPokemonName();
+            StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
+            if(pokemonNumber > highScore){
+                highScore = pokemonNumber -1;
+                ShowHighScore();
+                ShowHigScoreBy("neusr");
+            }
+        }else{
+            pokemonNumber = 1;
+            RestartOnFail();
+            ShowShameOn("neusr");
+        }
+
+        
     }
 
     void OnDestroy()
@@ -67,7 +93,6 @@ public class PokemonController : MonoBehaviour
     {
 
         UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+number);
-        pokemonNumber++;
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -81,10 +106,7 @@ public class PokemonController : MonoBehaviour
         Debug.Log(currentPokemon.name);
         Debug.Log(currentPokemon.sprites.front_default);
 
-        StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
-
-        ParseUserInput("!pkmn:nidoran m");
-        Debug.Log(CompareInputWithCurrentPokemon("!pkmn:nidoran m"));
+        pokemonNumber++;
 
         yield return new WaitForSeconds(0);
 
@@ -117,17 +139,16 @@ public class PokemonController : MonoBehaviour
         yield return null;
     }
 
+    public void RestartOnFail(){
+        GetComponent<Image>().sprite = empty;
+        lastPokemonNameTMP.text = "";
+    }
+
     public bool CompareInputWithCurrentPokemon(string input)
     {
         if(ParseUserInput(input) == ParseCurrentPokemonName()){
             return true;
         }
-
-        if(pokemonNumber + 1 > highScore){
-            highScore = pokemonNumber -1;
-        }
-
-        ShowHighScore();
         
 
         return false;
@@ -175,6 +196,18 @@ public class PokemonController : MonoBehaviour
 
     public void ShowHighScore(){
         highScoreTMP.text = "High score: " + highScore;
+    }
+
+    public void ShowShameOn(string username){
+        shameOnTMP.text = "Shame on "+ username;
+    }
+
+    public void ShowLastUsername(string username){
+        shameOnTMP.text = username;
+    }
+
+    public void ShowHigScoreBy(string username){
+        highScoreByTMP.text = "by " + username;
     }
 }
 
