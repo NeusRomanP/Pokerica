@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -14,6 +13,8 @@ using UnityEngine.UI;
 public class PokemonController : MonoBehaviour
 {
 
+    
+
     public TextMeshProUGUI lastPokemonNameTMP;
     public TextMeshProUGUI highScoreTMP;
     public TextMeshProUGUI shameOnTMP;
@@ -26,6 +27,8 @@ public class PokemonController : MonoBehaviour
     private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
     int pokemonNumber = 1;
     public Image img;
+    
+    private int maxPokemon = 1010;
 
     private int highScore = 0;
     private string highScoreBy = "";
@@ -38,6 +41,11 @@ public class PokemonController : MonoBehaviour
     [SerializeField]
     Pokemon nextPokemon;
 
+    [SerializeField]
+    Pokemon extraPokemon1;
+    [SerializeField]
+    Pokemon extraPokemon2;
+
     string lastPokemonName = "";
 
     // Start is called before the first frame update
@@ -46,12 +54,11 @@ public class PokemonController : MonoBehaviour
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
         nextPokemonTMP.text = "";
-        
-        Debug.Log("Prova");
+        shameOnTMP.text = shameOn;
+        highScoreTMP.text = "High score: "+ highScore;
+        highScoreByTMP.text = highScoreBy;
 
-        Debug.Log(OptionsController.difficultyLevel);
-
-        if(OptionsController.difficultyLevel != null && OptionsController.difficultyLevel.Equals("easy")){
+        if(OptionsController.difficultyLevel != null && (OptionsController.difficultyLevel.Equals("easy") || OptionsController.difficultyLevel.Equals("mid"))){
             StartCoroutine(FetchNextPokemon(1));
         }
 
@@ -85,8 +92,6 @@ public class PokemonController : MonoBehaviour
             }
             
         }
-
-        
     }
 
     void OnDestroy()
@@ -110,19 +115,18 @@ public class PokemonController : MonoBehaviour
         Debug.Log("Level");
         Debug.Log(OptionsController.difficultyLevel);
         Debug.Log(inputIsNextPokemon);
-        if(OptionsController.difficultyLevel.Equals("easy")){
+        if(OptionsController.difficultyLevel.Equals("easy") || OptionsController.difficultyLevel.Equals("mid")){
             if(OptionsController.restartOnFail && !inputIsNextPokemon){
                 Debug.Log("1");
                 StartCoroutine(FetchNextPokemon(1));
             }else if(!OptionsController.restartOnFail && !inputIsNextPokemon){
                 Debug.Log(currentPokemon.name);
                 Debug.Log("2");
-                StartCoroutine(FetchNextPokemon(pokemonNumber));
+                //StartCoroutine(FetchNextPokemon(pokemonNumber));
             }else{
                 Debug.Log("3");
                 StartCoroutine(FetchNextPokemon(pokemonNumber + 1));
             }
-            
         }
     }
 
@@ -164,7 +168,13 @@ public class PokemonController : MonoBehaviour
 
         nextPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        ShowNextPokemon(nextPokemon.name);
+        if(OptionsController.difficultyLevel.Equals("mid")){
+            StartCoroutine(FetchTwoExtraOptions(nextPokemon.name, number));
+        }else{
+            ShowNextPokemon(nextPokemon.name);
+        }
+
+        
 
         yield return new WaitForSeconds(0);
 
@@ -196,6 +206,72 @@ public class PokemonController : MonoBehaviour
 
         yield return null;
     }
+
+    IEnumerator FetchTwoExtraOptions(string correctOption, int number)
+    {
+        int[] numbers = {number};
+        int option1 = GetRandomDifferentThan(numbers);
+        int[] numbers2 = {number, option1};
+        int option2 = GetRandomDifferentThan(numbers2);
+
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+option1);
+
+        yield return pokemonInfo.SendWebRequest();
+
+        if(pokemonInfo.result == UnityWebRequest.Result.ConnectionError || pokemonInfo.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(pokemonInfo.error);
+            yield break;
+        }
+
+        extraPokemon1 = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
+
+        UnityWebRequest pokemonInfo2 = UnityWebRequest.Get(apiPath+option2);
+
+        yield return pokemonInfo2.SendWebRequest();
+
+        if(pokemonInfo2.result == UnityWebRequest.Result.ConnectionError || pokemonInfo2.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(pokemonInfo2.error);
+            yield break;
+        }
+
+        extraPokemon2 = JsonUtility.FromJson<Pokemon>(pokemonInfo2.downloadHandler.text);
+
+        string [] options = {correctOption, extraPokemon1.name, extraPokemon2.name};
+
+        options = RandomizeArray(options);
+
+        ShowExtraOptions(options[0], options[1], options[2]);
+
+
+        yield return null;
+    }
+
+    public int GetRandomDifferentThan(int[] numbers){
+
+        int option = Random.Range(1, maxPokemon);
+        for(int i = 0; i < numbers.Length; i++){
+            option = option;
+            while(option == numbers[i]){
+                option = Random.Range(1, maxPokemon);
+            }
+        }
+        
+        return option;
+    }
+
+    public string[] RandomizeArray(string [] array){
+        for (int i = 0; i < array.Length; i++ )
+        {
+            string tmp = array[i];
+            int r = Random.Range(i, array.Length);
+            array[i] = array[r];
+            array[r] = tmp;
+        }
+
+        return array;
+    }
+
+
 
     public void RestartOnFail(){
         img.GetComponent<Image>().sprite = empty;
@@ -285,6 +361,10 @@ public class PokemonController : MonoBehaviour
 
     public void ShowNextPokemon(string pokemon){
         nextPokemonTMP.text = pokemon.Replace("-", " ").ToUpper();
+    }
+
+    public void ShowExtraOptions(string option1, string option2, string option3){
+        nextPokemonTMP.text = option1 + " - " + option2 + " - " + option3;
     }
 }
 
