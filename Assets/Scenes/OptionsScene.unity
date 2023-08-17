@@ -341,6 +341,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleGroup: {fileID: 2131449585}
+  restartToggle: {fileID: 1534270704}
 --- !u!1 &307401045
 GameObject:
   m_ObjectHideFlags: 0
@@ -530,6 +531,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleGroup: {fileID: 2131449585}
+  restartToggle: {fileID: 1534270704}
 --- !u!1 &387368935
 GameObject:
   m_ObjectHideFlags: 0
@@ -1775,6 +1777,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleGroup: {fileID: 0}
+  restartToggle: {fileID: 1534270704}
 --- !u!1 &1714022959
 GameObject:
   m_ObjectHideFlags: 0
@@ -1888,6 +1891,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleGroup: {fileID: 2131449585}
+  restartToggle: {fileID: 1534270704}
 --- !u!1 &1763737292
 GameObject:
   m_ObjectHideFlags: 0

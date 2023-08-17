@@ -8,13 +8,22 @@ public class OptionsController : MonoBehaviour
 {
 
     public ToggleGroup toggleGroup;
+    public Toggle restartToggle;
 
-    public static string difficultyLevel = "hard";
-    public static bool restartOnFail = true;
+    public static string difficultyLevel;
+    public static bool restartOnFail;
     
     // Start is called before the first frame update
     void Start()
     {
+        if(difficultyLevel != null){
+            Toggle toggleSelected = GameObject.FindGameObjectWithTag(difficultyLevel).GetComponent<Toggle>();
+            toggleSelected.isOn = true;
+        }
+
+        Debug.Log(restartOnFail);
+
+        restartToggle.isOn = restartOnFail;
         
     }
 
@@ -27,11 +36,9 @@ public class OptionsController : MonoBehaviour
     public void ChangeDifficultyLevel(){
         Toggle toggle = toggleGroup.ActiveToggles().FirstOrDefault();
         difficultyLevel = toggle.tag;
-        //Debug.Log(difficultyLevel);
     }
 
     public void ToggleRestartOnFail(){
-        restartOnFail = !restartOnFail;
-        Debug.Log(restartOnFail);
+        restartOnFail = restartToggle.isOn;
     }
 }
