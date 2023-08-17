@@ -60,8 +60,6 @@ public class GameController : MonoBehaviour
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
         TwitchAuth();
-
-        Debug.Log(TwitchController.onTwitchMessageReceived);
     }
 
     private void Update()

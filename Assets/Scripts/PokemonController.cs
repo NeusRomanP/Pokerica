@@ -18,6 +18,7 @@ public class PokemonController : MonoBehaviour
     public TextMeshProUGUI highScoreTMP;
     public TextMeshProUGUI shameOnTMP;
     public TextMeshProUGUI highScoreByTMP;
+    public TextMeshProUGUI nextPokemonTMP;
 
     public Sprite empty;
 
@@ -34,18 +35,31 @@ public class PokemonController : MonoBehaviour
 
     [SerializeField]
     Pokemon currentPokemon;
+    [SerializeField]
+    Pokemon nextPokemon;
+
     string lastPokemonName = "";
 
     // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
+
+        nextPokemonTMP.text = "";
+        
+        Debug.Log("Prova");
+
+        Debug.Log(OptionsController.difficultyLevel);
+
+        if(OptionsController.difficultyLevel != null && OptionsController.difficultyLevel.Equals("easy")){
+            StartCoroutine(FetchNextPokemon(1));
+        }
 
         //ParseUserInput("PKMN: Bulbasaur");
     }
 
     // Update is called once per frame
-    void Update()
+    public void Update()
     {
         
 
@@ -54,7 +68,6 @@ public class PokemonController : MonoBehaviour
 
         
         if(isCorrectInput){
-            Debug.Log(pokemonNumber);
             ShowLastUsername("neusr");
             ShowLastPokemonName();
             StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
@@ -64,9 +77,13 @@ public class PokemonController : MonoBehaviour
                 ShowHigScoreBy("neusr");
             }
         }else{
-            pokemonNumber = 1;
-            RestartOnFail();
-            ShowShameOn("neusr");
+            
+            if(OptionsController.restartOnFail){
+                pokemonNumber = 1;
+                RestartOnFail();
+                ShowShameOn("neusr");
+            }
+            
         }
 
         
@@ -86,7 +103,27 @@ public class PokemonController : MonoBehaviour
 
     public void PrintPokemon(){
         Debug.Log(apiPath+pokemonNumber);
+
         StartCoroutine(FetchPokemonFromApi(pokemonNumber));
+
+        bool inputIsNextPokemon = CompareInputWithNextPokemon("!pkmn:bulbasaur");
+        Debug.Log("Level");
+        Debug.Log(OptionsController.difficultyLevel);
+        Debug.Log(inputIsNextPokemon);
+        if(OptionsController.difficultyLevel.Equals("easy")){
+            if(OptionsController.restartOnFail && !inputIsNextPokemon){
+                Debug.Log("1");
+                StartCoroutine(FetchNextPokemon(1));
+            }else if(!OptionsController.restartOnFail && !inputIsNextPokemon){
+                Debug.Log(currentPokemon.name);
+                Debug.Log("2");
+                StartCoroutine(FetchNextPokemon(pokemonNumber));
+            }else{
+                Debug.Log("3");
+                StartCoroutine(FetchNextPokemon(pokemonNumber + 1));
+            }
+            
+        }
     }
 
     IEnumerator FetchPokemonFromApi(int number)
@@ -103,10 +140,31 @@ public class PokemonController : MonoBehaviour
 
         currentPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        Debug.Log(currentPokemon.name);
-        Debug.Log(currentPokemon.sprites.front_default);
+        bool isCorrectInput = CompareInputWithCurrentPokemon("!pkmn:bulbasaur");
 
-        pokemonNumber++;
+        if(isCorrectInput){
+            pokemonNumber++;
+        }
+
+        yield return new WaitForSeconds(0);
+
+    }
+
+    IEnumerator FetchNextPokemon(int number)
+    {
+
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+number);
+
+        yield return pokemonInfo.SendWebRequest();
+
+        if(pokemonInfo.result == UnityWebRequest.Result.ConnectionError || pokemonInfo.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(pokemonInfo.error);
+            yield break;
+        }
+
+        nextPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
+
+        ShowNextPokemon(nextPokemon.name);
 
         yield return new WaitForSeconds(0);
 
@@ -133,20 +191,30 @@ public class PokemonController : MonoBehaviour
 
         request.Dispose();
 
-        GetComponent<Image>().sprite = Sprite.Create(downloadedTexture, new Rect(0, 0, downloadedTexture.width, downloadedTexture.height), new Vector2(0, 0));
+        img.GetComponent<Image>().sprite = Sprite.Create(downloadedTexture, new Rect(0, 0, downloadedTexture.width, downloadedTexture.height), new Vector2(0, 0));
 
 
         yield return null;
     }
 
     public void RestartOnFail(){
-        GetComponent<Image>().sprite = empty;
+        img.GetComponent<Image>().sprite = empty;
         lastPokemonNameTMP.text = "";
     }
 
     public bool CompareInputWithCurrentPokemon(string input)
     {
         if(ParseUserInput(input) == ParseCurrentPokemonName()){
+            return true;
+        }
+        
+
+        return false;
+    }
+
+    public bool CompareInputWithNextPokemon(string input)
+    {
+        if(ParseUserInput(input) == ParseNextPokemonName()){
             return true;
         }
         
@@ -168,8 +236,6 @@ public class PokemonController : MonoBehaviour
                 string sufix = currentPokemon.name[(currentPokemon.name.LastIndexOf("-")+1)..currentPokemon.name.Length];
                 if(!parsedInput.EndsWith(sufix)){
                     parsedInput += sufix;
-                    Debug.Log("Parsed");
-                    Debug.Log(parsedInput);
                 }
             }
 
@@ -186,6 +252,13 @@ public class PokemonController : MonoBehaviour
         string parsedCurrentPokemonName = currentPokemon.name.Replace("-", "").Replace(" ", "").Replace(".", "");
 
         return parsedCurrentPokemonName.ToLower();
+    }
+
+    public string ParseNextPokemonName()
+    {
+        string parsedNextPokemonName = nextPokemon.name.Replace("-", "").Replace(" ", "").Replace(".", "");
+
+        return parsedNextPokemonName.ToLower();
     }
 
     public void ShowLastPokemonName(){
@@ -208,6 +281,10 @@ public class PokemonController : MonoBehaviour
 
     public void ShowHigScoreBy(string username){
         highScoreByTMP.text = "by " + username;
+    }
+
+    public void ShowNextPokemon(string pokemon){
+        nextPokemonTMP.text = pokemon.Replace("-", " ").ToUpper();
     }
 }
 
