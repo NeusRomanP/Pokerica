@@ -48,7 +48,7 @@ public class PokemonController : MonoBehaviour
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
-        Debug.Log("Enter start");
+        lastPokemonNameTMP.text = "";
         nextPokemonTMP.text = "";
         shameOnTMP.text = shameOn;
         highScoreTMP.text = "High score: "+ highScore;
@@ -71,26 +71,18 @@ public class PokemonController : MonoBehaviour
 
     void OnDestroy()
     {
-        Debug.Log("Destroy");
         TwitchController.onTwitchMessageReceived -= OnTwitchMessageReceived;
     }
 
     private void OnTwitchMessageReceived(Chatter chatter)
     {
-        Debug.Log("Entra");
-        Debug.Log(chatter.message);
-
         PrintPokemon(chatter.message, chatter.tags.displayName);
     }
 
-    public void PrintPokemon(string message, string user){
-        //Debug.Log(apiPathSpecies+pokemonNumber);
-
+    public void PrintPokemon(string message, string user)
+    {
         StartCoroutine(FetchPokemonFromApi(pokemonNumber, message, user));
 
-        
-        Debug.Log("Level");
-        Debug.Log(OptionsController.difficultyLevel);
         string level = OptionsController.difficultyLevel;
 
         level ??= "hard";
@@ -98,14 +90,10 @@ public class PokemonController : MonoBehaviour
         if(level.Equals("easy") || level.Equals("mid")){
             bool inputIsNextPokemon = CompareInputWithNextPokemon(message);
             if(OptionsController.restartOnFail && !inputIsNextPokemon){
-                Debug.Log("1");
                 StartCoroutine(FetchNextPokemon(1));
             }else if(!OptionsController.restartOnFail && !inputIsNextPokemon){
-                Debug.Log(currentPokemon.name);
-                Debug.Log("2");
                 //StartCoroutine(FetchNextPokemon(pokemonNumber));
             }else{
-                Debug.Log("3");
                 StartCoroutine(FetchNextPokemon(pokemonNumber + 1));
             }
         }
@@ -137,8 +125,6 @@ public class PokemonController : MonoBehaviour
         }
 
         currentPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
-
-        Debug.Log(currentPokemon.name);
 
         string input = ParseUserInput(message);
 
@@ -337,8 +323,6 @@ public class PokemonController : MonoBehaviour
 
     public bool CompareInputWithCurrentPokemon(string input)
     {
-
-        Debug.Log(ParseUserInput(input) + " - " + ParseCurrentPokemonName());
         if(ParseUserInput(input) == ParseCurrentPokemonName()){
             return true;
         }
