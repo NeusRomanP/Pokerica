@@ -21,6 +21,7 @@ public class GameController : MonoBehaviour
     private readonly string twitchRedirectUrl = "http://localhost:";
     private readonly string loginSuccessUrl = "https://neusroman.com/pokerica-success";
     private readonly string loginFailUrl = "https://neusroman.com/pokerica-fail";
+    private readonly string urlToken = "/Nj753e3-Undrs72W2UPu17kOIjDJlAgdY-pfj3Tx798rkLYZ7S7eONes-NBZwZh5=i6OuEARD7RsHfNKJmbFR-M-Lq7qHqpVtlWckq4UGUu/dDdI2mFRp2uivNrH49rA2ps6pOCQFnNmxQZ8V!LMs/Q2Ju9Dskzj6aJn0fBn4!adbm05Fz2zfKYqHS9eGpGRtgrzSjC7-Y7Hn7uXIlQxbVkrK0cCgdu8rGKWxfvgIjLbXLST1D1bLw8!mJqkTGBn/";
 
     private string twitchAuthStateVerify;
     private string authToken = "";
@@ -29,7 +30,6 @@ public class GameController : MonoBehaviour
     private string channelName;
 
     private bool oauthTokenRetrieved;
-    public static bool isTwitchConnected;
 
     private HttpClient httpClient = new HttpClient();
     private HttpListener httpListener;
@@ -60,9 +60,7 @@ public class GameController : MonoBehaviour
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
-        if(!isTwitchConnected){
-            TwitchAuth();
-        }
+        TwitchAuth();
 
     }
 
@@ -92,7 +90,7 @@ public class GameController : MonoBehaviour
         twitchAuthStateVerify = ((Int64)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds).ToString();
 
         string s = "client_id=" + Secrets.CLIENT_ID + "&" +
-                "redirect_uri=" + UnityWebRequest.EscapeURL(twitchRedirectUrl+freePort+"/") + "&" +
+                "redirect_uri=" + UnityWebRequest.EscapeURL(twitchRedirectUrl+freePort+urlToken) + "&" +
                 "state=" + twitchAuthStateVerify + "&" +
                 "response_type=token" + "&" +
                 "scope=" + String.Join("+", scopes);
@@ -106,7 +104,7 @@ public class GameController : MonoBehaviour
     {
         httpListener = new HttpListener();
         
-        httpListener.Prefixes.Add(twitchRedirectUrl+freePort+"/");
+        httpListener.Prefixes.Add(twitchRedirectUrl+freePort+urlToken);
         httpListener.Start();
         httpListener.BeginGetContext(IncomingHttpRequest, httpListener);
     }
@@ -131,8 +129,6 @@ public class GameController : MonoBehaviour
                 string responseString = $"<html><body><script>window.location.replace(\"{loginSuccessUrl}\");</script></body></html>";
                 ValidateToken(true);
                 SendResponse(httpContext, responseString);
-
-                isTwitchConnected = true;
 
                 httpListener.Stop();
             }
@@ -302,7 +298,6 @@ public class GameController : MonoBehaviour
 
     private void OnTwitchMessageReceived(Chatter chatter)
     {
-        Debug.Log("Entra");
-        Debug.Log(chatter.message);
+       
     }
 }
