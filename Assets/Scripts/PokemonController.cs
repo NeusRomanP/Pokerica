@@ -29,6 +29,9 @@ public class PokemonController : MonoBehaviour
     private string highScoreBy = "";
     private string shameOn = "";
 
+    private bool inputIsNextPokemon;
+    private bool isCorrectInput;
+
     Texture2D downloadedTexture = null;
 
     [SerializeField]
@@ -88,7 +91,7 @@ public class PokemonController : MonoBehaviour
         level ??= "hard";
 
         if(level.Equals("easy") || level.Equals("mid")){
-            bool inputIsNextPokemon = CompareInputWithNextPokemon(message);
+            inputIsNextPokemon = CompareInputWithNextPokemon(message);
             if(OptionsController.restartOnFail && !inputIsNextPokemon){
                 StartCoroutine(FetchNextPokemon(1));
             }else if(!OptionsController.restartOnFail && !inputIsNextPokemon){
@@ -128,7 +131,7 @@ public class PokemonController : MonoBehaviour
 
         string input = ParseUserInput(message);
 
-        bool isCorrectInput = CompareInputWithCurrentPokemon(message);
+        isCorrectInput = CompareInputWithCurrentPokemon(message);
 
         if(isCorrectInput){
             ShowLastUsername(user);
@@ -137,7 +140,7 @@ public class PokemonController : MonoBehaviour
             if(pokemonNumber > highScore){
                 highScore = pokemonNumber;
                 ShowHighScore();
-                ShowHigScoreBy(user);
+                ShowHighScoreBy(user);
             }
         }else if(input != null){
             
@@ -146,14 +149,13 @@ public class PokemonController : MonoBehaviour
                 RestartOnFail();
                 ShowShameOn(user);
             }
-            
         }
 
         if(isCorrectInput){
             pokemonNumber++;
         }
 
-        yield return new WaitForSeconds(0);
+        yield return null;
 
     }
 
@@ -171,6 +173,8 @@ public class PokemonController : MonoBehaviour
 
         Specie currentSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
 
+        yield return currentSpecie.name;
+        
         string currentSpecieName = currentSpecie.name;
 
         UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+currentSpecieName);
@@ -184,6 +188,8 @@ public class PokemonController : MonoBehaviour
 
         nextPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
+        yield return nextPokemon;
+
         if(OptionsController.difficultyLevel.Equals("mid")){
             StartCoroutine(FetchTwoExtraOptions(nextPokemon.name, number));
         }else{
@@ -192,7 +198,7 @@ public class PokemonController : MonoBehaviour
 
         
 
-        yield return new WaitForSeconds(0);
+        yield return null;
 
     }
 
@@ -223,9 +229,10 @@ public class PokemonController : MonoBehaviour
         yield return null;
     }
 
-    IEnumerator FetchTwoExtraOptions(string correctOption, int number)
+    IEnumerator FetchTwoExtraOptions(string correct, int number)
     {
-        
+        string correctOption = nextPokemon.name;
+
         int[] numbers = {number};
         int option1 = GetRandomDifferentThan(numbers);
         int[] numbers2 = {number, option1};
@@ -255,9 +262,9 @@ public class PokemonController : MonoBehaviour
 
         Specie specie2 = JsonUtility.FromJson<Specie>(specieInfo2.downloadHandler.text);
 
-        string speciaName2 = specie2.name;
+        string specieName2 = specie2.name;
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+specieName1);
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+option1);
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -268,7 +275,7 @@ public class PokemonController : MonoBehaviour
 
         extraPokemon1 = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        UnityWebRequest pokemonInfo2 = UnityWebRequest.Get(apiPathPokemon+speciaName2);
+        UnityWebRequest pokemonInfo2 = UnityWebRequest.Get(apiPathPokemon+option2);
 
         yield return pokemonInfo2.SendWebRequest();
 
@@ -279,9 +286,11 @@ public class PokemonController : MonoBehaviour
 
         extraPokemon2 = JsonUtility.FromJson<Pokemon>(pokemonInfo2.downloadHandler.text);
 
-        string [] options = {correctOption, extraPokemon1.name, extraPokemon2.name};
+        string [] options = {correctOption, specieName1, specieName2};
 
         options = RandomizeArray(options);
+
+        yield return options;
 
         ShowExtraOptions(options[0], options[1], options[2]);
 
@@ -351,12 +360,22 @@ public class PokemonController : MonoBehaviour
 
             string parsedInput = name.Replace("-", "").Replace(" ", "").Replace(".", "").Replace("'", "");
 
-            if((currentPokemon.name.EndsWith("-f") || currentPokemon.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
-                string sufix = currentPokemon.name[(currentPokemon.name.LastIndexOf("-")+1)..currentPokemon.name.Length];
-                if(!parsedInput.EndsWith(sufix)){
-                    parsedInput += sufix;
+            if(OptionsController.difficultyLevel != null && !OptionsController.difficultyLevel.Equals("easy") && !OptionsController.difficultyLevel.Equals("mid")){
+                if((currentPokemon.name.EndsWith("-f") || currentPokemon.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
+                    string sufix = currentPokemon.name[(currentPokemon.name.LastIndexOf("-")+1)..currentPokemon.name.Length];
+                    if(!parsedInput.EndsWith(sufix)){
+                        parsedInput += sufix;
+                    }
+                }
+            }else{
+                if((nextPokemon.name.EndsWith("-f") || nextPokemon.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
+                    string sufix = nextPokemon.name[(nextPokemon.name.LastIndexOf("-")+1)..nextPokemon.name.Length];
+                    if(!parsedInput.EndsWith(sufix)){
+                        parsedInput += sufix;
+                    }
                 }
             }
+            
 
             lastPokemonName = currentPokemon.name;
 
@@ -398,7 +417,7 @@ public class PokemonController : MonoBehaviour
         shameOnTMP.text = username;
     }
 
-    public void ShowHigScoreBy(string username){
+    public void ShowHighScoreBy(string username){
         highScoreByTMP.text = "by " + username;
     }
 
