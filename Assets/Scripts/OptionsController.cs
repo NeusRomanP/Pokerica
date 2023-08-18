@@ -21,8 +21,6 @@ public class OptionsController : MonoBehaviour
             toggleSelected.isOn = true;
         }
 
-        Debug.Log(restartOnFail);
-
         restartToggle.isOn = restartOnFail;
         
     }
