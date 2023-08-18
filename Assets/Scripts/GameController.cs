@@ -292,7 +292,6 @@ public class GameController : MonoBehaviour
 
     void OnDestroy()
     {
-        Debug.Log("Destroy");
         TwitchController.onTwitchMessageReceived -= OnTwitchMessageReceived;
     }
 
