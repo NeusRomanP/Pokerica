@@ -18,7 +18,8 @@ public class PokemonController : MonoBehaviour
 
     public Sprite empty;
 
-    private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
+    private string apiPathSpecies = "https://pokeapi.co/api/v2/pokemon-species/";
+    private string apiPathPokemon = "https://pokeapi.co/api/v2/pokemon/";
     int pokemonNumber = 1;
     public Image img;
     
@@ -83,7 +84,7 @@ public class PokemonController : MonoBehaviour
     }
 
     public void PrintPokemon(string message, string user){
-        Debug.Log(apiPath+pokemonNumber);
+        //Debug.Log(apiPathSpecies+pokemonNumber);
 
         StartCoroutine(FetchPokemonFromApi(pokemonNumber, message, user));
 
@@ -113,7 +114,20 @@ public class PokemonController : MonoBehaviour
     IEnumerator FetchPokemonFromApi(int number, string message, string user)
     {
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+number);
+        UnityWebRequest specieInfo = UnityWebRequest.Get(apiPathSpecies+number);
+
+        yield return specieInfo.SendWebRequest();
+
+        if(specieInfo.result == UnityWebRequest.Result.ConnectionError || specieInfo.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(specieInfo.error);
+            yield break;
+        }
+
+        Specie currentSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
+
+        string currentSpecieName = currentSpecie.name;
+
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+currentSpecieName);
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -160,7 +174,20 @@ public class PokemonController : MonoBehaviour
     IEnumerator FetchNextPokemon(int number)
     {
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+number);
+        UnityWebRequest specieInfo = UnityWebRequest.Get(apiPathSpecies+number);
+
+        yield return specieInfo.SendWebRequest();
+
+        if(specieInfo.result == UnityWebRequest.Result.ConnectionError || specieInfo.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(specieInfo.error);
+            yield break;
+        }
+
+        Specie currentSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
+
+        string currentSpecieName = currentSpecie.name;
+
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+currentSpecieName);
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -212,12 +239,39 @@ public class PokemonController : MonoBehaviour
 
     IEnumerator FetchTwoExtraOptions(string correctOption, int number)
     {
+        
         int[] numbers = {number};
         int option1 = GetRandomDifferentThan(numbers);
         int[] numbers2 = {number, option1};
         int option2 = GetRandomDifferentThan(numbers2);
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+option1);
+        UnityWebRequest specieInfo1 = UnityWebRequest.Get(apiPathSpecies+option1);
+
+        yield return specieInfo1.SendWebRequest();
+
+        if(specieInfo1.result == UnityWebRequest.Result.ConnectionError || specieInfo1.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(specieInfo1.error);
+            yield break;
+        }
+
+        Specie specie1 = JsonUtility.FromJson<Specie>(specieInfo1.downloadHandler.text);
+
+        string specieName1 = specie1.name;
+
+        UnityWebRequest specieInfo2 = UnityWebRequest.Get(apiPathSpecies+option2);
+
+        yield return specieInfo2.SendWebRequest();
+
+        if(specieInfo2.result == UnityWebRequest.Result.ConnectionError || specieInfo2.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(specieInfo2.error);
+            yield break;
+        }
+
+        Specie specie2 = JsonUtility.FromJson<Specie>(specieInfo2.downloadHandler.text);
+
+        string speciaName2 = specie2.name;
+
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+specieName1);
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -228,7 +282,7 @@ public class PokemonController : MonoBehaviour
 
         extraPokemon1 = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        UnityWebRequest pokemonInfo2 = UnityWebRequest.Get(apiPath+option2);
+        UnityWebRequest pokemonInfo2 = UnityWebRequest.Get(apiPathPokemon+speciaName2);
 
         yield return pokemonInfo2.SendWebRequest();
 
@@ -373,6 +427,15 @@ public class PokemonController : MonoBehaviour
         option2 = option2.Replace("-", " ").ToUpper();
         option3 = option3.Replace("-", " ").ToUpper();
         nextPokemonTMP.text = option1 + " - " + option2 + " - " + option3;
+    }
+}
+
+[System.Serializable]
+class Specie{
+    public string name;
+
+    public Specie(string name){
+        this.name = name;
     }
 }
 
