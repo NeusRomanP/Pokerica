@@ -18,7 +18,7 @@ MonoBehaviour:
   preserveAcrossScenes: 1
   useAnonymousConnection: 0
   username: neusr
-  oAuthToken: 0gkxsi5v84e7tj6mow42w1xlsdp0qx
+  oAuthToken: u5vktj4pq8a2mdviqrccopkzo36i2e
   port: 6667
   server: irc.chat.twitch.tv
   anonUsername: justinfan5555
