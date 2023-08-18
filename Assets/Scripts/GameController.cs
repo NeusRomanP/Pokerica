@@ -29,6 +29,7 @@ public class GameController : MonoBehaviour
     private string channelName;
 
     private bool oauthTokenRetrieved;
+    public static bool isTwitchConnected;
 
     private HttpClient httpClient = new HttpClient();
     private HttpListener httpListener;
@@ -59,12 +60,17 @@ public class GameController : MonoBehaviour
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
-        TwitchAuth();
+        if(!isTwitchConnected){
+            TwitchAuth();
+        }
+
     }
 
     private void Update()
     {
-        if (!oauthTokenRetrieved) return;
+        if (!oauthTokenRetrieved){
+            return;
+        } 
         
         TwitchController.Login(channelName, new TwitchLoginInfo(channelName, authToken));
         
@@ -125,6 +131,8 @@ public class GameController : MonoBehaviour
                 string responseString = $"<html><body><script>window.location.replace(\"{loginSuccessUrl}\");</script></body></html>";
                 ValidateToken(true);
                 SendResponse(httpContext, responseString);
+
+                isTwitchConnected = true;
 
                 httpListener.Stop();
             }
