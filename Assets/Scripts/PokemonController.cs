@@ -4,6 +4,7 @@ using TMPro;
 using TwitchChat;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class PokemonController : MonoBehaviour
 {
@@ -79,7 +80,12 @@ public class PokemonController : MonoBehaviour
 
     private void OnTwitchMessageReceived(Chatter chatter)
     {
-        PrintPokemon(chatter.message, chatter.tags.displayName);
+        if(pokemonNumber == maxPokemon){
+            SceneManager.LoadScene(3);
+        }else{
+            PrintPokemon(chatter.message, chatter.tags.displayName);
+        }
+        
     }
 
     public void PrintPokemon(string message, string user)
