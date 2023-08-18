@@ -1,9 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
 using UnityEngine.Networking;
 using TMPro;
 using TwitchChat;
@@ -23,7 +18,6 @@ public class PokemonController : MonoBehaviour
 
     public Sprite empty;
 
-    private HttpClient client = new HttpClient();
     private string apiPath = "https://pokeapi.co/api/v2/pokemon/";
     int pokemonNumber = 1;
     public Image img;
@@ -49,10 +43,11 @@ public class PokemonController : MonoBehaviour
     string lastPokemonName = "";
 
     // Start is called before the first frame update
-    public void Start()
+    void Start()
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
+        Debug.Log("Enter start");
         nextPokemonTMP.text = "";
         shameOnTMP.text = shameOn;
         highScoreTMP.text = "High score: "+ highScore;
@@ -66,32 +61,11 @@ public class PokemonController : MonoBehaviour
     }
 
     // Update is called once per frame
-    public void Update()
+    void Update()
     {
         
 
-        ParseUserInput("!pkmn:bulbasaur");
-        bool isCorrectInput = CompareInputWithCurrentPokemon("!pkmn:bulbasaur");
-
         
-        if(isCorrectInput){
-            ShowLastUsername("neusr");
-            ShowLastPokemonName();
-            StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
-            if(pokemonNumber > highScore){
-                highScore = pokemonNumber -1;
-                ShowHighScore();
-                ShowHigScoreBy("neusr");
-            }
-        }else{
-            
-            if(OptionsController.restartOnFail){
-                pokemonNumber = 1;
-                RestartOnFail();
-                ShowShameOn("neusr");
-            }
-            
-        }
     }
 
     void OnDestroy()
@@ -104,18 +78,24 @@ public class PokemonController : MonoBehaviour
     {
         Debug.Log("Entra");
         Debug.Log(chatter.message);
+
+        PrintPokemon(chatter.message, chatter.tags.displayName);
     }
 
-    public void PrintPokemon(){
+    public void PrintPokemon(string message, string user){
         Debug.Log(apiPath+pokemonNumber);
 
-        StartCoroutine(FetchPokemonFromApi(pokemonNumber));
+        StartCoroutine(FetchPokemonFromApi(pokemonNumber, message, user));
 
-        bool inputIsNextPokemon = CompareInputWithNextPokemon("!pkmn:bulbasaur");
+        
         Debug.Log("Level");
         Debug.Log(OptionsController.difficultyLevel);
-        Debug.Log(inputIsNextPokemon);
-        if(OptionsController.difficultyLevel.Equals("easy") || OptionsController.difficultyLevel.Equals("mid")){
+        string level = OptionsController.difficultyLevel;
+
+        level ??= "hard";
+
+        if(level.Equals("easy") || level.Equals("mid")){
+            bool inputIsNextPokemon = CompareInputWithNextPokemon(message);
             if(OptionsController.restartOnFail && !inputIsNextPokemon){
                 Debug.Log("1");
                 StartCoroutine(FetchNextPokemon(1));
@@ -130,7 +110,7 @@ public class PokemonController : MonoBehaviour
         }
     }
 
-    IEnumerator FetchPokemonFromApi(int number)
+    IEnumerator FetchPokemonFromApi(int number, string message, string user)
     {
 
         UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPath+number);
@@ -144,7 +124,30 @@ public class PokemonController : MonoBehaviour
 
         currentPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        bool isCorrectInput = CompareInputWithCurrentPokemon("!pkmn:bulbasaur");
+        Debug.Log(currentPokemon.name);
+
+        string input = ParseUserInput(message);
+
+        bool isCorrectInput = CompareInputWithCurrentPokemon(message);
+
+        if(isCorrectInput){
+            ShowLastUsername(user);
+            ShowLastPokemonName();
+            StartCoroutine(FetchImageFromURL(currentPokemon.sprites.front_default));
+            if(pokemonNumber > highScore){
+                highScore = pokemonNumber;
+                ShowHighScore();
+                ShowHigScoreBy(user);
+            }
+        }else if(input != null){
+            
+            if(OptionsController.restartOnFail){
+                pokemonNumber = 1;
+                RestartOnFail();
+                ShowShameOn(user);
+            }
+            
+        }
 
         if(isCorrectInput){
             pokemonNumber++;
@@ -280,6 +283,8 @@ public class PokemonController : MonoBehaviour
 
     public bool CompareInputWithCurrentPokemon(string input)
     {
+
+        Debug.Log(ParseUserInput(input) + " - " + ParseCurrentPokemonName());
         if(ParseUserInput(input) == ParseCurrentPokemonName()){
             return true;
         }
@@ -364,6 +369,9 @@ public class PokemonController : MonoBehaviour
     }
 
     public void ShowExtraOptions(string option1, string option2, string option3){
+        option1 = option1.Replace("-", " ").ToUpper();
+        option2 = option2.Replace("-", " ").ToUpper();
+        option3 = option3.Replace("-", " ").ToUpper();
         nextPokemonTMP.text = option1 + " - " + option2 + " - " + option3;
     }
 }
