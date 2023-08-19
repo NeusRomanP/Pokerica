@@ -25,7 +25,7 @@ public class PokemonController : MonoBehaviour
     public Image img;
     
     private int maxPokemon = 1010;
-
+    private int minPokemon = 1;
     private int highScore = 0;
     private string highScoreBy = "";
     private string shameOn = "";
@@ -39,6 +39,10 @@ public class PokemonController : MonoBehaviour
     Pokemon currentPokemon;
     [SerializeField]
     Pokemon nextPokemon;
+    [SerializeField]
+    Specie currentSpecie;
+    [SerializeField]
+    Specie nextSpecie;
 
     [SerializeField]
     Pokemon extraPokemon1;
@@ -52,14 +56,17 @@ public class PokemonController : MonoBehaviour
     {
         TwitchController.onTwitchMessageReceived += OnTwitchMessageReceived;
 
-        lastPokemonNameTMP.text = "";
-        nextPokemonTMP.text = "";
-        shameOnTMP.text = shameOn;
-        highScoreTMP.text = "High score: "+ highScore;
-        highScoreByTMP.text = highScoreBy;
+        if(pokemonNumber == minPokemon){
+            lastPokemonNameTMP.text = "";
+            nextPokemonTMP.text = "";
+            shameOnTMP.text = shameOn;
+            highScoreTMP.text = "High score: "+ highScore;
+            highScoreByTMP.text = highScoreBy;
 
-        if(OptionsController.difficultyLevel != null && (OptionsController.difficultyLevel.Equals("easy") || OptionsController.difficultyLevel.Equals("mid"))){
-            StartCoroutine(FetchNextPokemon(1));
+            if(OptionsController.difficultyLevel != null && (OptionsController.difficultyLevel.Equals("easy") || OptionsController.difficultyLevel.Equals("mid"))){
+                //StartCoroutine(FetchPokemonFromApi(minPokemon, "", ""));
+                StartCoroutine(FetchNextPokemon(minPokemon -1));
+            }
         }
 
         //ParseUserInput("PKMN: Bulbasaur");
@@ -99,11 +106,11 @@ public class PokemonController : MonoBehaviour
         if(level.Equals("easy") || level.Equals("mid")){
             inputIsNextPokemon = CompareInputWithNextPokemon(message);
             if(OptionsController.restartOnFail && !inputIsNextPokemon){
-                StartCoroutine(FetchNextPokemon(1));
+                StartCoroutine(FetchNextPokemon(minPokemon - 1));
             }else if(!OptionsController.restartOnFail && !inputIsNextPokemon){
                 //StartCoroutine(FetchNextPokemon(pokemonNumber));
             }else{
-                StartCoroutine(FetchNextPokemon(pokemonNumber + 1));
+                StartCoroutine(FetchNextPokemon(pokemonNumber));
             }
         }
     }
@@ -120,11 +127,11 @@ public class PokemonController : MonoBehaviour
             yield break;
         }
 
-        Specie currentSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
+        currentSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
 
         string currentSpecieName = currentSpecie.name;
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+currentSpecieName);
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+number);
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -151,7 +158,7 @@ public class PokemonController : MonoBehaviour
         }else if(input != null){
             
             if(OptionsController.restartOnFail){
-                pokemonNumber = 1;
+                pokemonNumber = minPokemon;
                 RestartOnFail();
                 ShowShameOn(user);
             }
@@ -168,7 +175,18 @@ public class PokemonController : MonoBehaviour
     IEnumerator FetchNextPokemon(int number)
     {
 
-        UnityWebRequest specieInfo = UnityWebRequest.Get(apiPathSpecies+number);
+        UnityWebRequest currentSpecieInfo = UnityWebRequest.Get(apiPathSpecies+number);
+
+        yield return currentSpecieInfo.SendWebRequest();
+
+        if(currentSpecieInfo.result == UnityWebRequest.Result.ConnectionError || currentSpecieInfo.result == UnityWebRequest.Result.ProtocolError){
+            Debug.LogError(currentSpecieInfo.error);
+            yield break;
+        }
+
+        currentSpecie = JsonUtility.FromJson<Specie>(currentSpecieInfo.downloadHandler.text);
+
+        UnityWebRequest specieInfo = UnityWebRequest.Get(apiPathSpecies+(number+1));
 
         yield return specieInfo.SendWebRequest();
 
@@ -177,13 +195,11 @@ public class PokemonController : MonoBehaviour
             yield break;
         }
 
-        Specie currentSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
-
-        yield return currentSpecie.name;
+        nextSpecie = JsonUtility.FromJson<Specie>(specieInfo.downloadHandler.text);
         
-        string currentSpecieName = currentSpecie.name;
+        string nextSpecieName = nextSpecie.name;
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+currentSpecieName);
+        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+number);
 
         yield return pokemonInfo.SendWebRequest();
 
@@ -194,12 +210,12 @@ public class PokemonController : MonoBehaviour
 
         nextPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
-        yield return nextPokemon;
+        //yield return nextPokemon;
 
         if(OptionsController.difficultyLevel.Equals("mid")){
-            StartCoroutine(FetchTwoExtraOptions(nextPokemon.name, number));
+            StartCoroutine(FetchTwoExtraOptions(nextSpecie.name, number));
         }else{
-            ShowNextPokemon(nextPokemon.name);
+            ShowNextPokemon(nextSpecie.name);
         }
 
         
@@ -237,7 +253,7 @@ public class PokemonController : MonoBehaviour
 
     IEnumerator FetchTwoExtraOptions(string correct, int number)
     {
-        string correctOption = nextPokemon.name;
+        string correctOption = correct;
 
         int[] numbers = {number};
         int option1 = GetRandomDifferentThan(numbers);
@@ -381,9 +397,8 @@ public class PokemonController : MonoBehaviour
                     }
                 }
             }
-            
 
-            lastPokemonName = currentPokemon.name;
+            lastPokemonName = currentSpecie.name;
 
             return parsedInput;
         }
@@ -393,14 +408,14 @@ public class PokemonController : MonoBehaviour
 
     public string ParseCurrentPokemonName()
     {
-        string parsedCurrentPokemonName = currentPokemon.name.Replace("-", "").Replace(" ", "").Replace(".", "");
+        string parsedCurrentPokemonName = currentSpecie.name.Replace("-", "").Replace(" ", "").Replace(".", "");
 
         return parsedCurrentPokemonName.ToLower();
     }
 
     public string ParseNextPokemonName()
     {
-        string parsedNextPokemonName = nextPokemon.name.Replace("-", "").Replace(" ", "").Replace(".", "");
+        string parsedNextPokemonName = nextSpecie.name.Replace("-", "").Replace(" ", "").Replace(".", "");
 
         return parsedNextPokemonName.ToLower();
     }
