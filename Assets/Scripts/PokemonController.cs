@@ -175,16 +175,20 @@ public class PokemonController : MonoBehaviour
     IEnumerator FetchNextPokemon(int number)
     {
 
-        UnityWebRequest currentSpecieInfo = UnityWebRequest.Get(apiPathSpecies+number);
+        if(number != 0){
+            UnityWebRequest currentSpecieInfo = UnityWebRequest.Get(apiPathSpecies+number);
 
-        yield return currentSpecieInfo.SendWebRequest();
+            yield return currentSpecieInfo.SendWebRequest();
 
-        if(currentSpecieInfo.result == UnityWebRequest.Result.ConnectionError || currentSpecieInfo.result == UnityWebRequest.Result.ProtocolError){
-            Debug.LogError(currentSpecieInfo.error);
-            yield break;
+            if(currentSpecieInfo.result == UnityWebRequest.Result.ConnectionError || currentSpecieInfo.result == UnityWebRequest.Result.ProtocolError){
+                Debug.LogError(currentSpecieInfo.error);
+                yield break;
+            }
+
+            currentSpecie = JsonUtility.FromJson<Specie>(currentSpecieInfo.downloadHandler.text);
         }
 
-        currentSpecie = JsonUtility.FromJson<Specie>(currentSpecieInfo.downloadHandler.text);
+        
 
         UnityWebRequest specieInfo = UnityWebRequest.Get(apiPathSpecies+(number+1));
 
@@ -199,16 +203,18 @@ public class PokemonController : MonoBehaviour
         
         string nextSpecieName = nextSpecie.name;
 
-        UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+number);
+        if(number != 0){
+            UnityWebRequest pokemonInfo = UnityWebRequest.Get(apiPathPokemon+number);
 
-        yield return pokemonInfo.SendWebRequest();
+            yield return pokemonInfo.SendWebRequest();
 
-        if(pokemonInfo.result == UnityWebRequest.Result.ConnectionError || pokemonInfo.result == UnityWebRequest.Result.ProtocolError){
-            Debug.LogError(pokemonInfo.error);
-            yield break;
+            if(pokemonInfo.result == UnityWebRequest.Result.ConnectionError || pokemonInfo.result == UnityWebRequest.Result.ProtocolError){
+                Debug.LogError(pokemonInfo.error);
+                yield break;
+            }
+
+            nextPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
         }
-
-        nextPokemon = JsonUtility.FromJson<Pokemon>(pokemonInfo.downloadHandler.text);
 
         //yield return nextPokemon;
 
