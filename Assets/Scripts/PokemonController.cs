@@ -69,7 +69,6 @@ public class PokemonController : MonoBehaviour
             }
         }
 
-        //ParseUserInput("PKMN: Bulbasaur");
     }
 
     // Update is called once per frame
@@ -382,29 +381,31 @@ public class PokemonController : MonoBehaviour
     {
         input = input.ToLower();
 
-        if(input.StartsWith("!pkmn:"))
+        if(input.StartsWith("!p "))
         {
-            string name = input.Split("!pkmn:")[1];
+            string name = input.Split("!p ")[1];
 
             string parsedInput = name.Replace("-", "").Replace(" ", "").Replace(".", "").Replace("'", "");
 
-            if(OptionsController.difficultyLevel != null && !OptionsController.difficultyLevel.Equals("easy") && !OptionsController.difficultyLevel.Equals("mid")){
-                if((currentPokemon.name.EndsWith("-f") || currentPokemon.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
-                    string sufix = currentPokemon.name[(currentPokemon.name.LastIndexOf("-")+1)..currentPokemon.name.Length];
+            if(OptionsController.difficultyLevel != null && OptionsController.difficultyLevel.Equals("easy") && OptionsController.difficultyLevel.Equals("mid")){
+                /*if((nextSpecie.name.EndsWith("-f") || nextSpecie.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
+                    string sufix = nextSpecie.name[(nextSpecie.name.LastIndexOf("-")+1)..nextSpecie.name.Length];
                     if(!parsedInput.EndsWith(sufix)){
                         parsedInput += sufix;
                     }
-                }
+                }*/
+                lastPokemonName = nextSpecie.name;
             }else{
-                if((nextPokemon.name.EndsWith("-f") || nextPokemon.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
-                    string sufix = nextPokemon.name[(nextPokemon.name.LastIndexOf("-")+1)..nextPokemon.name.Length];
+                /*if((currentSpecie.name.EndsWith("-f") || currentSpecie.name.EndsWith("-m")) && !parsedInput.EndsWith("f") && !parsedInput.EndsWith("m")){
+                    string sufix = currentSpecie.name[(currentSpecie.name.LastIndexOf("-")+1)..currentSpecie.name.Length];
                     if(!parsedInput.EndsWith(sufix)){
                         parsedInput += sufix;
                     }
-                }
+                }*/
+                lastPokemonName = currentSpecie.name;
             }
 
-            lastPokemonName = currentSpecie.name;
+            
 
             return parsedInput;
         }
